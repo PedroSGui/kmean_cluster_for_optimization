@@ -4,18 +4,54 @@ from sklearn.cluster import KMeans
 
 class Clusterrer:
     """
-    Function for performing the distance based kmean clustering procedure.
+    Class for performing the distance-based k-means clustering procedure.
 
-    A cluster é uma classe porque vai ser chamado na main como um objeto que tem atributos.
-    A ideia é que esse script não tenha uma main porque tudo aqui são bases para o main que
-    eu não queria colocar junto para o código não ficar muito grande
-    """
-    
-    """
-    parameters: É necessàrio passar a estrutura que deseja clusterizar
-    n_cluster: Numero de dias que quer de output, precisa ser maior do que 0 e menor do que o tamanho da estrutura original
-    intervals_in day: O numero de intervalos no dia é importante para a função entender a estrutura que esta a tratar
-    *args: quantas string quiser, precisa estar contido na estrutura original
+    This class is designed to be instantiated and called from a main program.
+    The main program should provide the necessary parameters and data structure
+    for clustering.
+
+    Parameters:
+        - parameters: The data structure to be clustered.
+        - days_clustered: The number of output days required. It should be greater than 0
+          and smaller than the size of the original data structure.
+        - intervals_in_day: The number of intervals in a day. It helps the function
+          understand the structure of the data.
+        - *args: Any number of additional string arguments that need to be present
+          in the original data structure.
+
+    Usage:
+    ```
+    # Create an instance of Clusterrer
+    clusterer = Clusterrer(parameters, days_clustered, intervals_in_day, *args)
+
+    # Access the clustered data
+    clustered_data = clusterer.dict()
+    ```
+
+    The `__init__` method initializes the clustering procedure. It takes the provided
+    parameters and performs the following steps:
+
+    1. Flatten the original data structure using the `flatten_json` function.
+    2. Calculate the distance between consecutive elements in the data structure and
+       aggregate the distances by day.
+    3. Convert the aggregated distances into a suitable format for the KMeans algorithm.
+    4. Apply the KMeans algorithm to cluster the distances into `days_clustered` clusters.
+
+    The `dict` method returns the clustered data in a structured format. It performs the
+    following steps:
+
+    1. Initialize variables and data structures.
+    2. Iterate over the keys of the original data structure.
+    3. For each key, calculate the representative element for each cluster by averaging
+       the corresponding elements from the original data structure.
+    4. Store the representative elements in a new data structure.
+    5. Return the final clustered data structure.
+
+    The `flatten_json` function is used to flatten the original data structure to fit the
+    expected input format of the clustering algorithm.
+
+    The `unflatten_json` function is the reverse process of restoring the original
+    structure from the clustered data.
     """
     def __init__(self, parameters, days_clustered, intervals_in_day, *args) -> None:
         self.args = args
@@ -29,9 +65,9 @@ class Clusterrer:
         for key_estrutura in self.estrutura_a_clusterizar.keys():
             if key_estrutura in args:
                 day_already_formed = 0
-                # determina qual o tamanho do horizonte temporal a partir do tamanho de uma das componentes da estrutura original
+                # The code is examining the length of a specific component within the original data structure. By determining the number of elements or data points in this component, it infers the extent or duration of the temporal horizon. This information is crucial for subsequent steps in the clustering procedure.
                 horizon_extended = len(self.estrutura_a_clusterizar[key_estrutura])
-                # numero de dias que compõem o horizonte considendo que o periodo de simulação é de 1 hora
+                # The code is calculating the number of days that make up the time horizon based on a simulation period of 1 hour. It takes into account the duration of the simulation and calculates the corresponding number of days. This information is used in subsequent computations or operations related to the clustering procedure.
                 self.days = int(horizon_extended / self.intervals_in_day)
                 periods_in_day = int(horizon_extended / self.days)
                 for pos_elem_da_key_da_estrutura in range(
@@ -51,32 +87,32 @@ class Clusterrer:
                         )
                     )
 
-                    # ve se a posição é a ultima do dia e se for aumenta o numero de dias que já formou
+                    # The code is examining whether the current position represents the last position of a day. If it is indeed the last position of the day, the code increments the count of formed days. This check allows the code to keep track of the progress in forming complete days within the temporal data structure being processed.
                     if (
                         pos_elem_da_key_da_estrutura % periods_in_day
                     ) == periods_in_day - 1:
                         day_already_formed = day_already_formed + 1
                         if len(dist_total) < self.days:
-                            # cria a distancia se ela ainda não existe, nesse exemplo é criado pelo primeiro vetor que é a distancia eletrica
+                            # The code is responsible for creating the distance if it doesn't already exist. This step is necessary to initialize the distance calculation process. In the given example, the distance is created using the first vector, which specifically represents the electrical distance. This initialization ensures that the distance calculation starts from a valid reference point or initial value.
                             dist_total.append(dist)
                         else:
-                            # adiciona a distancia do dia existente, nesse caso a termica esta sendo adicionada a distancia eletrica, ams poderia ter outras distancias
+                            # The code is responsible for adding the distance of the current day to the existing distance. In this case, the thermal distance is being combined with the electrical distance. However, it is noted that there could be other types of distances involved in the calculation. The specific distances being added may vary depending on the context or requirements of the clustering procedure.
                             dist_total[day_already_formed - 1] = (
                                 dist_total[day_already_formed - 1] + dist
                             )
                         dist = 0
 
-        # Aqui é uma mudança de estrutura de dados para que a informação da função instancia
-        # caiba da forma correta no formato pedido pela biblioteca que uso para o Kmeans
+        # The code snippet is describing a modification made to the data structure to ensure compatibility with the K-means clustering library being used. The specific data structure is being transformed or adapted to meet the format requirements of the library. This adjustment is crucial to successfully apply the K-means algorithm to the data and obtain the desired clustering results.
         for i in range(int(self.days)):
             fitter.append([dist_total[i], 0])
 
-        # Aplicação do Kmeans
         self.kmeans_results = KMeans(
             n_clusters=days_clustered, random_state=0, n_init="auto"
         ).fit(fitter)
-        # print(dist_total) # descomenta para ver a distancia relativa de cada dia em ordem cronologica
-        # print(self.kmeans_results.labels_) # descomenta pra ver que os dias com distancia semelhantes são agregados no mesmo dia
+        # Another print statement is available in the code, which, when uncommented, displays the labels assigned by the K-means clustering algorithm to each day. This print statement illustrates that days with similar distances are grouped together within the clustering results. It allows you to observe the clustering outcome and the grouping of days based on their similarity in terms of the calculated distances.
+        # print(dist_total) 
+        # print(self.kmeans_results.labels_) 
+
 
     def dict(self):
         final_estrutura_a_clusterizar = {}
@@ -87,12 +123,12 @@ class Clusterrer:
             if type(self.estrutura_a_clusterizar[key_estrutura]) == list:
                 for i in range(self.days_clustered):
                     if len(synthetized_freq) < self.days_clustered:
-                        # armazena o tamanho do vetor com todas as posições que compõem o cluster
+                        # The code is responsible for storing the size or length of the vector that represents the cluster. It keeps track of the number of positions or elements that belong to a specific cluster. This information can be useful for further analysis or evaluation of the clustering results, as it provides an understanding of the composition and size of each cluster.
                         synthetized_freq.append(
                             len(np.where(self.kmeans_results.labels_ == i)[0])
                         )
                     for z in np.where(self.kmeans_results.labels_ == i)[0]:
-                        # Aqui é onde eu crio o elemento representativo do cluster, escolhi fazer uma média dos vários inputs.
+                        # At this point in the code, the representative element of the cluster is being created. The chosen approach for creating the representative element is to compute the average of the various inputs within the cluster. By taking the average, the code generates a single representative value that captures the central tendency or typical behavior of the data points within the cluster. This representative element is used to summarize the characteristics of the cluster and aids in interpreting the results of the clustering process.
                         for period in range(self.intervals_in_day):
                             if i*self.intervals_in_day + period >= len(soma_d[key_estrutura]):
                                 soma_d[key_estrutura].append(0)
@@ -118,8 +154,39 @@ class Clusterrer:
         final_estrutura_a_clusterizar["cluster_freq"] = synthetized_freq
         return unflatten_json(final_estrutura_a_clusterizar)
 
-#Utilizado para planificar o dicionario disponibilizado de forma a poder receber qualquer estrutura de dicionario do usuario
+
 def flatten_json(json):
+    """
+    Utility function to flatten a nested JSON dictionary structure.
+
+    This function recursively iterates over the dictionary and flattens it by
+    concatenating nested keys with a dot ('.') separator.
+
+    Parameters:
+        - json: The JSON dictionary to be flattened.
+
+    Returns:
+        The flattened JSON dictionary.
+
+    Example:
+    ```
+    data = {
+        'key1': {
+            'nested1': 1,
+            'nested2': 2
+        },
+        'key2': {
+            'nested3': 3
+        }
+    }
+    flattened_data = flatten_json(data)
+    # Result: {
+    #     'key1.nested1': 1,
+    #     'key1.nested2': 2,
+    #     'key2.nested3': 3
+    # }
+    ```
+    """
     if type(json) == dict:
         for k, v in list(json.items()):
             if type(v) == dict:
@@ -129,8 +196,38 @@ def flatten_json(json):
                     json[k + "." + k2] = v2
     return json
 
-#processo reverso de restaurar a estrutura original
 def unflatten_json(json):
+    """
+    Utility function to unflatten a flattened JSON dictionary structure.
+
+    This function reverses the process of flattening by splitting the concatenated
+    keys and reconstructing the original nested structure.
+
+    Parameters:
+        - json: The flattened JSON dictionary to be unflattened.
+
+    Returns:
+        The unflattened JSON dictionary.
+
+    Example:
+    ```
+    flattened_data = {
+        'key1.nested1': 1,
+        'key1.nested2': 2,
+        'key2.nested3': 3
+    }
+    unflattened_data = unflatten_json(flattened_data)
+    # Result: {
+    #     'key1': {
+    #         'nested1': 1,
+    #         'nested2': 2
+    #     },
+    #     'key2': {
+    #         'nested3': 3
+    #     }
+    # }
+    ```
+    """
     if type(json) == dict:
         for k in sorted(json.keys(), reverse=True):
             if "." in k:
